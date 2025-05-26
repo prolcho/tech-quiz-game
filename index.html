@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>⚡ 힙스터 기술사 카드게임</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background: radial-gradient(circle at center, #0f0f0f 0%, #000000 100%);
+      color: #ffffff;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+    h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 2rem;
+      color: #00ffe1;
+      text-shadow: 0 0 10px #00ffe1, 0 0 20px #00ffe1;
+    }
+    #quizCard {
+      background: #1e1e1e;
+      border: 2px solid #00ffe1;
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 0 20px #00ffe1;
+      animation: flicker 1s infinite alternate;
+    }
+    @keyframes flicker {
+      0% { box-shadow: 0 0 10px #00ffe1; }
+      100% { box-shadow: 0 0 20px #00ffe1, 0 0 30px #00ffe1; }
+    }
+    #question {
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+      color: #ffffff;
+    }
+    #options {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .option-btn {
+      background: #0f0f0f;
+      border: 2px solid #00ffe1;
+      color: #00ffe1;
+      padding: 1rem;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      text-align: center;
+      cursor: pointer;
+    }
+    .option-btn:hover {
+      background: #00ffe1;
+      color: #000000;
+      transform: scale(1.05);
+      box-shadow: 0 0 12px #00ffe1, 0 0 20px #00ffe1;
+    }
+    #feedback {
+      margin-top: 1.5rem;
+      font-weight: bold;
+      font-size: 1.2rem;
+      text-align: center;
+    }
+    #nextBtn, #resetBtn {
+      margin: 2rem auto 0;
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 12px;
+      display: block;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+    #nextBtn {
+      background: #0984e3;
+      color: white;
+    }
+    #resetBtn {
+      background: #d63031;
+      color: white;
+    }
+    #nextBtn:hover {
+      background: #74b9ff;
+      box-shadow: 0 0 10px #74b9ff;
+    }
+    #resetBtn:hover {
+      background: #ff7675;
+      box-shadow: 0 0 10px #ff7675;
+    }
+    #score {
+      text-align: center;
+      font-size: 1rem;
+      color: #b2bec3;
+      margin-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h2>⚡ ELECTRO TECH QUIZ</h2>
+    <div id="quizCard">
+      <div id="question"></div>
+      <div id="options"></div>
+      <div id="feedback"></div>
+    </div>
+    <button id="nextBtn">➡️ 다음 문제</button>
+    <button id="resetBtn">🔄 점수 초기화</button>
+    <div id="score"></div>
+  </div>
+  <script>
+    const quizzes = [
+      { type: '정의', question: 'Dynamic UPS는 어떤 장치로 전원을 공급하는가?', options: ['정류기', 'Motor/Generator', '배터리', '인버터'], answer: 'Motor/Generator' },
+      { type: 'OX', question: 'Dynamic UPS는 고조파 함유율이 높은 전원을 제공한다.', options: ['O', 'X'], answer: 'X' },
+      { type: '비교', question: 'Static UPS와 Dynamic UPS 비교 중 틀린 것은?', options: ['Static UPS는 정지기이다.', 'Dynamic UPS는 실내 설치가 적합하다.', 'Dynamic UPS는 고조파가 적다.', 'Static UPS는 유지보수가 쉽다.'], answer: 'Dynamic UPS는 실내 설치가 적합하다.' },
+    ];
+    const questionEl = document.getElementById('question');
+    const optionsEl = document.getElementById('options');
+    const feedbackEl = document.getElementById('feedback');
+    const nextBtn = document.getElementById('nextBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const scoreEl = document.getElementById('score');
+    let currentQuiz, score = 0, totalAttempt = 0;
+
+    function updateScore() {
+      scoreEl.innerText = `점수: ${score} / ${totalAttempt}`;
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function loadQuiz() {
+      feedbackEl.innerText = '';
+      nextBtn.style.display = 'none';
+      resetBtn.style.display = 'none';
+      const idx = Math.floor(Math.random() * quizzes.length);
+      currentQuiz = quizzes[idx];
+      questionEl.innerText = `[${currentQuiz.type}] ${currentQuiz.question}`;
+      optionsEl.innerHTML = '';
+      shuffle([...currentQuiz.options]).forEach(opt => {
+        const btn = document.createElement('button');
+        btn.innerText = opt;
+        btn.className = 'option-btn';
+        btn.onclick = () => checkAnswer(opt);
+        optionsEl.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(selected) {
+      totalAttempt++;
+      if (selected === currentQuiz.answer) score++;
+      feedbackEl.innerText = selected === currentQuiz.answer ? '✅ 정답입니다!' : `❌ 오답입니다. 정답: ${currentQuiz.answer}`;
+      feedbackEl.style.color = selected === currentQuiz.answer ? '#00ffe1' : '#ff7675';
+      updateScore();
+      nextBtn.style.display = 'block';
+      resetBtn.style.display = 'block';
+    }
+
+    nextBtn.onclick = () => loadQuiz();
+    resetBtn.onclick = () => { score = 0; totalAttempt = 0; updateScore(); loadQuiz(); };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateScore();
+      loadQuiz();
+    });
+  </script>
+</body>
+</html>
