@@ -6,9 +6,7 @@
   <title>⚡ 힙스터 기술사 카드게임</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
   <style>
-    * {
-      margin: 0; padding: 0; box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Orbitron', sans-serif;
       background: radial-gradient(circle at center, #0f0f0f 0%, #000000 100%);
@@ -29,179 +27,117 @@
       border-radius: 20px;
       padding: 2rem;
       box-shadow: 0 0 20px #00ffe1;
-      animation: flicker 1s infinite alternate;
     }
-    @keyframes flicker {
-      0% { box-shadow: 0 0 10px #00ffe1; }
-      100% { box-shadow: 0 0 20px #00ffe1, 0 0 30px #00ffe1; }
+    #question { font-size: 1.5rem; margin-bottom: 2rem; }
+    #options { display: flex; flex-direction: column; gap: 1rem; }
+    .option-btn, #submitAnswer {
+      background: #0f0f0f; border: 2px solid #00ffe1; color: #00ffe1;
+      padding: 1rem; border-radius: 12px; font-size: 1rem;
+      cursor: pointer; text-align: center;
     }
-    #question {
-      font-size: 1.5rem;
-      margin-bottom: 2rem;
-      color: #ffffff;
+    .option-btn:hover, #submitAnswer:hover {
+      background: #00ffe1; color: #000;
+      transform: scale(1.05); box-shadow: 0 0 12px #00ffe1;
     }
-    #options {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    .option-btn {
-      background: #0f0f0f;
-      border: 2px solid #00ffe1;
-      color: #00ffe1;
-      padding: 1rem;
-      border-radius: 12px;
-      font-size: 1rem;
-      transition: all 0.3s ease;
-      text-align: center;
-      cursor: pointer;
-    }
-    .option-btn:hover {
-      background: #00ffe1;
-      color: #000000;
-      transform: scale(1.05);
-      box-shadow: 0 0 12px #00ffe1, 0 0 20px #00ffe1;
-    }
-    #feedback {
-      margin-top: 1.5rem;
-      font-weight: bold;
-      font-size: 1.2rem;
-      text-align: center;
-    }
+    #inputAnswer { padding: 0.8rem; border-radius: 8px; width: 100%; font-size: 1rem; margin-bottom: 1rem; }
+    #feedback { margin-top: 1.5rem; font-size: 1.2rem; text-align: center; }
     #nextBtn, #resetBtn {
-      margin: 2rem auto 0;
-      padding: 0.8rem 1.5rem;
-      font-size: 1rem;
-      border: none;
-      border-radius: 12px;
-      display: block;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-align: center;
+      margin: 2rem auto 0; padding: 0.8rem 1.5rem;
+      font-size: 1rem; border-radius: 12px;
+      display: block; cursor: pointer; border: none;
     }
-    #nextBtn {
-      background: #0984e3;
-      color: white;
-    }
-    #resetBtn {
-      background: #d63031;
-      color: white;
-    }
-    #nextBtn:hover {
-      background: #74b9ff;
-      box-shadow: 0 0 10px #74b9ff;
-    }
-    #resetBtn:hover {
-      background: #ff7675;
-      box-shadow: 0 0 10px #ff7675;
-    }
-    #score {
-      text-align: center;
-      font-size: 1rem;
-      color: #b2bec3;
-      margin-top: 1.5rem;
-    }
+    #nextBtn { background: #0984e3; color: white; }
+    #resetBtn { background: #d63031; color: white; }
+    #nextBtn:hover { background: #74b9ff; box-shadow: 0 0 10px #74b9ff; }
+    #resetBtn:hover { background: #ff7675; box-shadow: 0 0 10px #ff7675; }
+    #score { text-align: center; margin-top: 1.5rem; color: #b2bec3; }
   </style>
 </head>
 <body>
-  <div id="app">
-    <h2>⚡ ELECTRO TECH QUIZ</h2>
-    <div id="quizCard">
-      <div id="question"></div>
-      <div id="options"></div>
-      <div id="feedback"></div>
-    </div>
-    <button id="nextBtn">➡️ 다음 문제</button>
-    <button id="resetBtn">🔄 점수 초기화</button>
-    <div id="score"></div>
+<div id="app">
+  <h2>⚡ ELECTRO TECH QUIZ</h2>
+  <div id="quizCard">
+    <div id="question"></div>
+    <div id="options"></div>
+    <input id="inputAnswer" type="text" style="display:none" placeholder="답을 입력하세요">
+    <button id="submitAnswer" style="display:none">정답 확인</button>
+    <div id="feedback"></div>
   </div>
-  <script>
-    let quizzes = [];
-    let currentQuiz, score = 0, totalAttempt = 0;
+  <button id="nextBtn">➡️ 다음 문제</button>
+  <button id="resetBtn">🔄 점수 초기화</button>
+  <div id="score"></div>
+</div>
+<script>
+let quizzes = [], currentQuiz, score = 0, totalAttempt = 0;
 
-    async function loadFromJSON() {
-      const res = await fetch("study_full_quiz.json");
-      const data = await res.json();
-
-      quizzes = data.flatMap(item => {
-        const quizSet = [];
-        if (item.definition) {
-          quizSet.push({ type: '정의', question: item.definition, options: ['이해함'], answer: '이해함' });
-        }
-        if (item.fill_in_blank) {
-          item.fill_in_blank.forEach(q => quizSet.push({ type: '빈칸', question: q, options: ['확인'], answer: '확인' }));
-        }
-        if (item.sequence_order) {
-          quizSet.push({ type: '순서', question: item.sequence_order.join(' → '), options: ['확인'], answer: '확인' });
-        }
-        if (item.comparison) {
-          quizSet.push({ type: '비교', question: item.comparison, options: ['확인'], answer: '확인' });
-        }
-        if (item.multiple_choice) {
-          item.multiple_choice.forEach(q => quizSet.push({ type: '객관식', question: q.question, options: q.choices, answer: q.answer }));
-        }
-        return quizSet;
-      });
-      loadQuiz();
+async function loadFromJSON() {
+  const res = await fetch("study_full_quiz.json");
+  const data = await res.json();
+  quizzes = data.flatMap(item => {
+    const quizSet = [];
+    if (item.fill_in_blank) {
+      item.fill_in_blank.forEach(q => quizSet.push({ type: '빈칸', question: q.question, answer: q.answer }));
     }
-
-    function updateScore() {
-      document.getElementById('score').innerText = `점수: ${score} / ${totalAttempt}`;
+    if (item.multiple_choice) {
+      item.multiple_choice.forEach(q => quizSet.push({ type: '객관식', question: q.question, options: q.choices, answer: q.answer }));
     }
+    return quizSet;
+  });
+  loadQuiz();
+}
 
-    function shuffle(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr;
-    }
+function updateScore() {
+  document.getElementById('score').innerText = `점수: ${score} / ${totalAttempt}`;
+}
 
-    function loadQuiz() {
-      document.getElementById('feedback').innerText = '';
-      document.getElementById('nextBtn').style.display = 'none';
-      document.getElementById('resetBtn').style.display = 'none';
+function loadQuiz() {
+  const q = document.getElementById('question');
+  const o = document.getElementById('options');
+  const i = document.getElementById('inputAnswer');
+  const s = document.getElementById('submitAnswer');
+  const f = document.getElementById('feedback');
+  q.innerText = ''; o.innerHTML = ''; f.innerText = ''; i.value = '';
+  s.style.display = 'none'; i.style.display = 'none';
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('resetBtn').style.display = 'none';
 
-      const idx = Math.floor(Math.random() * quizzes.length);
-      currentQuiz = quizzes[idx];
+  currentQuiz = quizzes[Math.floor(Math.random() * quizzes.length)];
+  q.innerText = `[${currentQuiz.type}] ${currentQuiz.question}`;
 
-      document.getElementById('question').innerText = `[${currentQuiz.type}] ${currentQuiz.question}`;
-      const optionsEl = document.getElementById('options');
-      optionsEl.innerHTML = '';
-
-      shuffle([...currentQuiz.options]).forEach(opt => {
-        const btn = document.createElement('button');
-        btn.innerText = opt;
-        btn.className = 'option-btn';
-        btn.onclick = () => checkAnswer(opt);
-        optionsEl.appendChild(btn);
-      });
-    }
-
-    function checkAnswer(selected) {
-      totalAttempt++;
-      if (selected === currentQuiz.answer) score++;
-
-      const feedback = selected === currentQuiz.answer ? '✅ 정답입니다!' : `❌ 오답입니다. 정답: ${currentQuiz.answer}`;
-      document.getElementById('feedback').innerText = feedback;
-      document.getElementById('feedback').style.color = selected === currentQuiz.answer ? '#00ffe1' : '#ff7675';
-      updateScore();
-      document.getElementById('nextBtn').style.display = 'block';
-      document.getElementById('resetBtn').style.display = 'block';
-    }
-
-    document.getElementById('nextBtn').onclick = () => loadQuiz();
-    document.getElementById('resetBtn').onclick = () => {
-      score = 0;
-      totalAttempt = 0;
-      updateScore();
-      loadQuiz();
-    };
-
-    document.addEventListener('DOMContentLoaded', () => {
-      updateScore();
-      loadFromJSON();
+  if (currentQuiz.type === '객관식') {
+    currentQuiz.options.sort(() => Math.random() - 0.5).forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.innerText = opt;
+      btn.onclick = () => checkAnswer(opt);
+      o.appendChild(btn);
     });
-  </script>
+  } else if (currentQuiz.type === '빈칸') {
+    i.style.display = 'block';
+    s.style.display = 'block';
+    s.onclick = () => checkAnswer(i.value.trim());
+  }
+}
+
+function checkAnswer(selected) {
+  totalAttempt++;
+  const correct = selected === currentQuiz.answer;
+  if (correct) score++;
+  document.getElementById('feedback').innerText = correct ? '✅ 정답입니다!' : `❌ 오답입니다. 정답: ${currentQuiz.answer}`;
+  document.getElementById('feedback').style.color = correct ? '#00ffe1' : '#ff7675';
+  updateScore();
+  document.getElementById('nextBtn').style.display = 'block';
+  document.getElementById('resetBtn').style.display = 'block';
+}
+
+document.getElementById('nextBtn').onclick = loadQuiz;
+document.getElementById('resetBtn').onclick = () => {
+  score = 0; totalAttempt = 0;
+  updateScore(); loadQuiz();
+};
+document.addEventListener('DOMContentLoaded', () => {
+  updateScore(); loadFromJSON();
+});
+</script>
 </body>
 </html>
