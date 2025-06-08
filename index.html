@@ -116,21 +116,37 @@
     <div id="score"></div>
   </div>
   <script>
-    const quizzes = [
-      { type: '정의', question: 'Dynamic UPS는 어떤 장치로 전원을 공급하는가?', options: ['정류기', 'Motor/Generator', '배터리', '인버터'], answer: 'Motor/Generator' },
-      { type: 'OX', question: 'Dynamic UPS는 고조파 함유율이 높은 전원을 제공한다.', options: ['O', 'X'], answer: 'X' },
-      { type: '비교', question: 'Static UPS와 Dynamic UPS 비교 중 틀린 것은?', options: ['Static UPS는 정지기이다.', 'Dynamic UPS는 실내 설치가 적합하다.', 'Dynamic UPS는 고조파가 적다.', 'Static UPS는 유지보수가 쉽다.'], answer: 'Dynamic UPS는 실내 설치가 적합하다.' },
-    ];
-    const questionEl = document.getElementById('question');
-    const optionsEl = document.getElementById('options');
-    const feedbackEl = document.getElementById('feedback');
-    const nextBtn = document.getElementById('nextBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const scoreEl = document.getElementById('score');
+    let quizzes = [];
     let currentQuiz, score = 0, totalAttempt = 0;
 
+    async function loadFromJSON() {
+      const res = await fetch("study_full_quiz.json");
+      const data = await res.json();
+
+      quizzes = data.flatMap(item => {
+        const quizSet = [];
+        if (item.definition) {
+          quizSet.push({ type: '정의', question: item.definition, options: ['이해함'], answer: '이해함' });
+        }
+        if (item.fill_in_blank) {
+          item.fill_in_blank.forEach(q => quizSet.push({ type: '빈칸', question: q, options: ['확인'], answer: '확인' }));
+        }
+        if (item.sequence_order) {
+          quizSet.push({ type: '순서', question: item.sequence_order.join(' → '), options: ['확인'], answer: '확인' });
+        }
+        if (item.comparison) {
+          quizSet.push({ type: '비교', question: item.comparison, options: ['확인'], answer: '확인' });
+        }
+        if (item.multiple_choice) {
+          item.multiple_choice.forEach(q => quizSet.push({ type: '객관식', question: q.question, options: q.choices, answer: q.answer }));
+        }
+        return quizSet;
+      });
+      loadQuiz();
+    }
+
     function updateScore() {
-      scoreEl.innerText = `점수: ${score} / ${totalAttempt}`;
+      document.getElementById('score').innerText = `점수: ${score} / ${totalAttempt}`;
     }
 
     function shuffle(arr) {
@@ -142,13 +158,17 @@
     }
 
     function loadQuiz() {
-      feedbackEl.innerText = '';
-      nextBtn.style.display = 'none';
-      resetBtn.style.display = 'none';
+      document.getElementById('feedback').innerText = '';
+      document.getElementById('nextBtn').style.display = 'none';
+      document.getElementById('resetBtn').style.display = 'none';
+
       const idx = Math.floor(Math.random() * quizzes.length);
       currentQuiz = quizzes[idx];
-      questionEl.innerText = `[${currentQuiz.type}] ${currentQuiz.question}`;
+
+      document.getElementById('question').innerText = `[${currentQuiz.type}] ${currentQuiz.question}`;
+      const optionsEl = document.getElementById('options');
       optionsEl.innerHTML = '';
+
       shuffle([...currentQuiz.options]).forEach(opt => {
         const btn = document.createElement('button');
         btn.innerText = opt;
@@ -161,19 +181,26 @@
     function checkAnswer(selected) {
       totalAttempt++;
       if (selected === currentQuiz.answer) score++;
-      feedbackEl.innerText = selected === currentQuiz.answer ? '✅ 정답입니다!' : `❌ 오답입니다. 정답: ${currentQuiz.answer}`;
-      feedbackEl.style.color = selected === currentQuiz.answer ? '#00ffe1' : '#ff7675';
+
+      const feedback = selected === currentQuiz.answer ? '✅ 정답입니다!' : `❌ 오답입니다. 정답: ${currentQuiz.answer}`;
+      document.getElementById('feedback').innerText = feedback;
+      document.getElementById('feedback').style.color = selected === currentQuiz.answer ? '#00ffe1' : '#ff7675';
       updateScore();
-      nextBtn.style.display = 'block';
-      resetBtn.style.display = 'block';
+      document.getElementById('nextBtn').style.display = 'block';
+      document.getElementById('resetBtn').style.display = 'block';
     }
 
-    nextBtn.onclick = () => loadQuiz();
-    resetBtn.onclick = () => { score = 0; totalAttempt = 0; updateScore(); loadQuiz(); };
+    document.getElementById('nextBtn').onclick = () => loadQuiz();
+    document.getElementById('resetBtn').onclick = () => {
+      score = 0;
+      totalAttempt = 0;
+      updateScore();
+      loadQuiz();
+    };
 
     document.addEventListener('DOMContentLoaded', () => {
       updateScore();
-      loadQuiz();
+      loadFromJSON();
     });
   </script>
 </body>
