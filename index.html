@@ -1,117 +1,1320 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+  <audio id="sfx-correct" src="correct.wav" preload="auto"></audio>
+<audio id="sfx-wrong" src="wrong.wav" preload="auto"></audio>
+<audio id="sfx-next" src="next.wav" preload="auto"></audio>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>⚡ 기술사 카드 퀴즈게임</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <title>타자 드롭 퀴즈++</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Orbitron:wght@500&display=swap" rel="stylesheet">
+
+
+  <!-- Head에 추가 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css" />
+
+<button id="pauseBtn" onclick="togglePause()" style="
+  position: absolute; top: 10px; left: 100px; z-index: 10;
+  background: #111; color: #00ffe1; border: 1px solid #00ffe1;
+  padding: 6px 12px; border-radius: 6px; font-size: 0.9rem;">
+⏸ 일시정지
+</button>
+
+  
+
+
   <style>
-    body {
-      font-family: 'Orbitron', sans-serif;
-      background: radial-gradient(circle at center, #0f0f0f, #000);
-      color: #00ffe1;
-      padding: 2rem;
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+
+:root {
+  --main-accent: #b38bff; /* 귀여운 보라빛 강조색 */
+  --bg-dark: #0a0a0a;
+  --bg-light: #1a1a1a;
+  --text-bright: #fff;
+}
+
+
+
+
+
+    html, body {
+      margin: 0; padding: 0; background: linear-gradient(180deg, #0a0a0a, #1a1a1a); overflow: hidden;
+      /* 기존 Gowun Dodum 교체 */
+body {
+  font-family: 'Pretendard', 'Orbitron', sans-serif;
+}
+
     }
-    .quiz-box {
-      background: #111;
-      padding: 2rem;
-      border-radius: 1rem;
-      box-shadow: 0 0 20px #00ffe1;
-      max-width: 600px;
-      width: 100%;
-      text-align: center;
+    canvas { display: block; }
+
+    #questionBox {
+    display: none;
+      position: absolute; top: 30px; width: 100%; text-align: center;
+      color: #00ffe1; font-size: 2rem; z-index: 10; text-shadow: 0 0 5px #0ff;
     }
-    .question {
-      font-size: 1.3rem;
-      margin-bottom: 1.5rem;
+
+    #scoreBox {
+      position: absolute; top: 10px; left: 20px;
+      color: #ffffff; font-size: 1rem; z-index: 10;
     }
-    .answers button {
-      background: none;
-      color: #00ffe1;
-      border: 2px solid #00ffe1;
-      padding: 0.8rem;
-      border-radius: 0.5rem;
-      margin: 0.5rem;
-      cursor: pointer;
-      width: 100%;
+
+    #inputBox {
+      position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
+      z-index: 10;
     }
-    .answers button:hover {
-      background: #00ffe1;
-      color: #000;
+
+    #textInput {
+  font-size: 1.5rem;
+  padding: 0.5rem;
+  width: 320px;
+  border: 2px solid #00ffe1;
+  border-radius: 8px;
+  background: #000000;
+  color: #00ffe1;
+  text-align: center;
+  transition: transform 0.1s ease, box-shadow 0.3s ease;
+  caret-color: #ff0; /* ✅ 추가 */
+}
+
+#textInput::placeholder {
+  color: #00ffe188;    /* ✅ 신규 블록 전체 추가 */
+  font-style: italic;
+}
+
+
+#textInput:focus {
+  outline: none;
+  box-shadow: 0 0 12px #00ffe1, 0 0 30px #00ffe155; /* 기존보다 더 강하게 */
+  background-color: #111; /* 살짝 밝게 */
+}
+
+    #textInput.shake {
+      transform: translateX(-50%) scale(1.05) rotate(1deg);
+      animation: shake 0.3s ease;
     }
-    .result {
-      font-size: 1.2rem;
-      margin-top: 1rem;
+
+    @keyframes shake {
+      0% { transform: translateX(-50%) translateX(0px); }
+      25% { transform: translateX(-50%) translateX(-5px); }
+      50% { transform: translateX(-50%) translateX(5px); }
+      75% { transform: translateX(-50%) translateX(-5px); }
+      100% { transform: translateX(-50%) translateX(0px); }
     }
-    #nextBtn {
-      margin-top: 2rem;
-      background: #00ffe1;
-      color: #000;
-      border: none;
-      padding: 0.8rem 1.5rem;
-      border-radius: 0.5rem;
-      cursor: pointer;
-    }
+
+    #explainBox {
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+  text-align: center;
+  color: #ff0;
+  font-size: 1.2rem;
+  display: none;
+  background-color: rgba(255,255,255,0.05);
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #888;  
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+#explainBox.visible {
+  opacity: 1;
+}
+
+#progressBox {
+  position: absolute;
+  top: 70px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  z-index: 10;
+}
+.progress-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: #333;
+  border: 2px solid #00ffe1;
+  transition: background-color 0.3s ease;
+}
+.progress-dot.active {
+  background-color: #00ffe1;
+}
+
+
+
+
+#floatingTextContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 999;
+}
+.floating-text {
+  position: absolute;
+  color: #ff0;
+  font-size: 1.5rem;
+  animation: floatUp 1s ease-out forwards;
+}
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-50px); }
+}
+
+.fade-out {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.fade-in {
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+
+@keyframes zoomFadeIn {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes zoomFadeOut {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.05);
+    opacity: 0;
+  }
+}
+
+.fade-in {
+  animation: zoomFadeIn 0.5s ease forwards;
+}
+
+.fade-out {
+  animation: zoomFadeOut 0.5s ease forwards;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-image: radial-gradient(#00ffe1 0.5px, transparent 0.5px);
+  background-size: 20px 20px;
+  opacity: 0.03;
+  z-index: 0;
+  animation: gridMove 30s linear infinite;
+}
+@keyframes gridMove {
+  from { background-position: 0 0; }
+  to { background-position: 100px 100px; }
+}
+
+
+
+@media (max-width: 480px) {
+  #textInput {
+    width: 90vw;
+    font-size: 1.2rem;
+  }
+
+  #questionBox {
+    font-size: 1.4rem;
+    top: 20px;
+  }
+
+  #explainBox {
+    font-size: 1rem;
+    padding: 8px;
+  }
+
+  #scoreBox, #failCountBox, #statusBox {
+    font-size: 0.9rem;
+  }
+
+  #modeSelector {
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.9rem;
+    padding: 8px;
+    left: 10px;
+    top: 100px;
+  }
+
+  #manualHintButton,
+  #restartCurrentBtn {
+    left: 10px;
+    bottom: auto;
+    top: auto;
+    transform: scale(0.9);
+  }
+
+  #restartCurrentBtn {
+    left: auto;
+    right: 10px;
+  }
+
+  #startScreen,
+  #congratsScreen {
+    font-size: 1.4rem;
+    padding: 20px;
+  }
+
+  #fullHintPopup > div {
+    padding: 10px;
+  }
+
+  #fullHintPopup h2 {
+    font-size: 1.2rem;
+  }
+
+  #fullHintPopup #fullHintContent {
+    font-size: 0.9rem;
+  }
+}
+
+
+
+
+
+@media (max-width: 480px) {
+  #textInput {
+    width: 90vw;
+    font-size: 1.2rem;
+  }
+
+  #questionBox {
+    font-size: 1.4rem;
+    top: 20px;
+  }
+
+  #explainBox {
+    font-size: 1rem;
+    padding: 8px;
+  }
+
+  #scoreBox, #failCountBox, #statusBox {
+    font-size: 0.85rem;
+  }
+
+  #modeSelector {
+    flex-direction: column;
+    font-size: 0.9rem;
+    left: 10px;
+    top: 100px;
+  }
+
+  #manualHintButton,
+  #restartCurrentBtn {
+    bottom: 10px;
+    transform: scale(0.9);
+  }
+
+  #restartCurrentBtn {
+    right: 10px;
+    left: auto;
+  }
+
+  #startScreen,
+  #congratsScreen {
+    font-size: 1.5rem;
+    padding: 20px;
+  }
+}
+
+
+    /* UI 버튼 스타일 추가 예정 시 */
   </style>
 </head>
 <body>
-  <div class="quiz-box">
-    <div class="question" id="question">문제가 로딩 중입니다...</div>
-    <div class="answers" id="answers"></div>
-    <div class="result" id="result"></div>
-    <button id="nextBtn" onclick="loadNextQuestion()">다음 문제 ▶</button>
+
+
+<!-- ✅ 전체 힌트 보기 수동 버튼 -->
+<div id="manualHintButton" style="
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1000;
+">
+  <button onclick="openFullHintManually()" style="
+background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--main-accent);
+  border-radius: 12px;
+  color: var(--main-accent);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.95rem;
+  padding: 6px 12px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  ">💡 힌트 전체 열기</button>
+</div>
+
+
+
+<div id="restartCurrentBtn" style="
+  position: fixed;
+  bottom: 20px;
+  left: 160px;
+  z-index: 1000;
+">
+  <button onclick="restartCurrentQuestion()" style="
+background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--main-accent);
+  border-radius: 12px;
+  color: var(--main-accent);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.95rem;
+  padding: 6px 12px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  ">🔄 현재 문제 다시</button>
+</div>
+
+
+
+
+
+
+
+<div id="statusBox" style="
+  position: fixed;
+  top: 10px;
+  right: 20px;
+  background: rgba(0,0,0,0.7);
+  color: #00ffff;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  z-index: 999;
+">
+  진행: 1 / ?
+</div>
+
+
+
+
+
+<div id="modeSelector" style="
+  position: fixed;
+  top: 10px;
+  left: 200px; /* ← 여기만 변경 */
+  z-index: 999;
+  background: rgba(0,0,0,0.6);
+  border-radius: 10px;
+  padding: 6px 12px;
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  font-family: 'Orbitron', sans-serif;
+  color: #00ffe1;
+">
+  <label><input type="radio" name="mode" value="strict"> Strict</label>
+  <label><input type="radio" name="mode" value="normal" checked> Normal</label>
+  <label><input type="radio" name="mode" value="fuzzy"> Fuzzy</label>
+</div>
+
+
+<div id="skipHint" style="
+  position: fixed;
+  top: 60px;
+  right: 20px;
+  font-size: 0.8rem;
+  color: #999;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 4px 10px;
+  border-radius: 8px;
+  z-index: 999;
+  font-family: 'Orbitron', sans-serif;
+">
+  ⏩ Shift + → 키로 문제 스킵
+</div>
+
+
+
+
+  <div id="questionBox"></div>
+  <div id="progressBox"></div>
+<div id="pauseNotice" style="display:none; position:absolute; top:50%; left:50%;
+transform:translate(-50%,-50%); color:#fff; font-size:2rem; background:#111; 
+padding:1rem 2rem; border:2px solid #00ffe1; z-index:20;">
+⏸ 일시정지 중
+</div>
+
+  <div id="scoreBox">점수: 0</div>
+<div id="failCountBox" style="
+  position: absolute;
+  top: 80px;
+  right: 20px;
+  color: #ff8888;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 16px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 6px 10px;
+  border-radius: 6px;
+  z-index: 100;
+">
+  ❌ Fail: 0
+</div>
+
+
+
+
+  <div id="inputBox">
+    <input type="text" id="textInput" placeholder="여기에 키워드 입력 후 Enter" autocomplete="off" />
   </div>
+  <div id="explainBox"><span id="hintCharacter">⚡전기신:</span> <span id="hintText"></span></div>
+
+  <div id="floatingTextContainer"></div>
+
+  <canvas id="canvas"></canvas>
+
+
+
+<div id="congratsScreen" style="
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.95);
+  color: #00ffcc;
+  font-size: 2rem;
+  font-family: 'Orbitron', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  z-index: 9999;
+  text-align: center;
+">
+  🎉 모든 문제를 완료하셨습니다!<br><br>
+  <button onclick="restartQuiz()" style="
+background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--main-accent);
+  border-radius: 12px;
+  color: var(--main-accent);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.95rem;
+  padding: 6px 12px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  ">다시 시작하기</button>
+</div>
+
+
+<div id="startScreen" style="
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  color: #00ffe1;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.8rem;
+  z-index: 9999;
+  text-align: center;
+">
+  🧠 <strong>타자 드롭 퀴즈++</strong><br><br>
+  <span style="font-size: 1rem; color: #999">Enter 키를 눌러 시작하세요</span>
+</div>
+
+
+
 
   <script>
-    let quizData = [];
-    let currentIndex = 0;
 
-    async function fetchQuiz() {
-      const response = await fetch('study_full_quiz.json');
-      const data = await response.json();
-      quizData = data.flatMap(item => item.quizItems.filter(q => q.type === '객관식 선택형'));
-      loadNextQuestion();
+
+function restartCurrentQuestion() {
+  // 현재 문제의 상태를 초기화
+  failCount = 0;
+  activeLetters = [];
+  fallingLetters = [];
+  particles = [];
+  letterSpawnTimer = 0;
+  isPaused = false;
+  textInput.value = '';
+  explainBox.style.display = 'none';
+  explainBox.classList.remove('visible');
+  document.getElementById('fullHintPopup').style.display = 'none';
+
+  // 다시 불러오기
+  loadQuestion();
+  updateStatusBox();
+  playSound("sfx-next"); // 효과음으로 구분
+}
+
+
+
+
+
+
+
+
+function closeFullHintPopup() {
+  document.getElementById('fullHintPopup').style.display = 'none';
+  failCount = 0; // 🔁 초기화
+  updateFailCountUI(); // UI에도 반영
+  explainBox.style.display = 'none'; // 해설창도 함께 숨기기
+  explainBox.classList.remove('visible');
+}
+
+
+
+
+
+
+
+function openFullHintManually() {
+  const fullHintBox = document.getElementById('fullHintPopup');
+  const content = document.getElementById('fullHintContent');
+  const currentQuiz = quizData[current];
+  let html = `<strong>문제:</strong> ${currentQuiz.title}<br><br>`;
+  html += `<strong>힌트:</strong> ${currentQuiz.hint}<br><br>`;
+  html += `<strong>정답 목록:</strong><br><ul>`;
+  currentQuiz.answers.forEach(ans => {
+    html += `<li><strong>${ans.letter}</strong>: ${ans.text}</li>`;
+  });
+  html += `</ul><br><em style="color:#ccc;">※ 학습용으로 정답 전체를 보여드립니다.</em>`;
+  content.innerHTML = html;
+  fullHintBox.style.display = 'block';
+}
+
+
+
+
+
+function restartQuiz() {
+  current = 0;
+  score = 0;
+  failCount = 0;
+  document.getElementById('congratsScreen').style.display = 'none';
+  shuffleArray(quizData); // 다시 섞고
+  loadQuestion();
+  updateProgressUI();
+  updateStatusBox();
+}
+
+
+
+
+function updateStatusBox() {
+  const statusBox = document.getElementById('statusBox');
+  statusBox.textContent = `진행: ${current + 1} / ${quizData.length}`;
+}
+
+
+
+
+function togglePause() {
+  isPaused = !isPaused;
+  wasManuallyPaused = isPaused; // ✅ 일시정지 했는지 기억해둠
+
+  const pauseBox = document.getElementById('pauseNotice');
+  const pauseBtn = document.getElementById('pauseBtn');
+
+  pauseBox.style.display = isPaused ? 'block' : 'none';
+  pauseBtn.textContent = isPaused ? "▶ 재개" : "⏸ 일시정지";
+
+  if (!isPaused) animate();
+}
+
+
+
+function updateProgressUI() {
+  const box = document.getElementById('progressBox');
+  box.innerHTML = ''; // 초기화
+  const total = quizData[current].answers.length;
+  const currentHits = total - activeLetters.length;
+  for (let i = 0; i < total; i++) {
+    const dot = document.createElement('div');
+    dot.classList.add('progress-dot');
+    if (i < currentHits) dot.classList.add('active');
+    box.appendChild(dot);
+  }
+}
+
+
+function showFloatingText(x, y, text = "+1점!") {
+  const span = document.createElement("span");
+  span.className = "floating-text";
+  span.textContent = text;
+  span.style.left = `${x}px`;
+  span.style.top = `${y}px`;
+  document.getElementById("floatingTextContainer").appendChild(span);
+  setTimeout(() => span.remove(), 1000);
+}
+function playSound(id) {
+  const sound = document.getElementById(id);
+  if (sound) {
+    sound.currentTime = 0;
+    sound.play();
+  }
+}
+
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+
+
+
+    canvas.height = window.innerHeight;
+
+    const questionBox = document.getElementById('questionBox');
+    const scoreBox = document.getElementById('scoreBox');
+    const textInput = document.getElementById('textInput');
+    const explainBox = document.getElementById('explainBox');
+
+    const quizData = [
+{
+  title: "1. 3상에서 단상으로 변환 결선",
+  hint: "스변역리",
+  answers: [
+    {
+      letter: "스",
+      text: "스코트결선",
+      aliases: ["스코트", "스코트 결선", "Scott 결선", "Scott connection"]
+    },
+    {
+      letter: "변",
+      text: "변형우드브리지결선",
+      aliases: ["변형우드브리지", "우드브리지", "우드브리지 결선", "Woodbridge 결선"]
+    },
+    {
+      letter: "역",
+      text: "역V결선",
+      aliases: ["역V", "역V 결선", "역브이결선", "역 브이 결선"]
+    },
+    {
+      letter: "리",
+      text: "리액터와 콘덴서에 의한 방법",
+      aliases: ["리액터", "콘덴서", "리액터 콘덴서 방법", "리액터와 콘덴서", "리액터 콘덴서"]
+    }
+  ],
+  explain: "3상을 단상으로 변환하는 대표적 방식은 스코트결선, 변형우드브리지결선, 역V결선, 그리고 리액터와 콘덴서에 의한 방법이 있다."
+},
+
+
+ {
+  title: "1-1. 스코트결선의 특징",
+  hint: "단스전교이중권통",
+  answers: [
+    {
+      letter: "단",
+      text: "단상변압기 2개를 T형으로 결선한 방식",
+      aliases: ["단상변압기", "T형결선", "T형", "T형 결선"]
+    },
+    {
+      letter: "스",
+      text: "스코트결선 이용시 90도 위상차가 있는 단상전원 2개를 얻음",
+      aliases: ["90도 위상차", "위상차 90도", "단상전원 2개"]
+    },
+    {
+      letter: "전",
+      text: "전압불평형 방지를 위해 사용",
+      aliases: ["전압불평형", "전압불균형", "불평형 방지"]
+    },
+    {
+      letter: "교",
+      text: "교류전기철도 AT급전방식에 주로 사용",
+      aliases: ["AT급전방식", "교류전기철도", "급전방식"]
+    },
+    {
+      letter: "이",
+      text: "이용률이 92.8%로 높은 편",
+      aliases: ["이용률 92.8%", "이용률 높음", "효율 92.8%"]
+    },
+    {
+      letter: "중",
+      text: "중성점 접지 불가",
+      aliases: ["중성점 없음", "중성점 접지 불가", "접지 불가"]
+    },
+    {
+      letter: "권",
+      text: "권선 임피던스 정합 불가",
+      aliases: ["임피던스 정합 안됨", "권선 정합 불가", "임피던스 불일치"]
+    },
+    {
+      letter: "통",
+      text: "통신선 유도장애 발생",
+      aliases: ["통신선 장애", "유도장애", "유도 전압"]
+    }
+  ],
+  explain: "단상 2개 T형, 90도 위상차, 전압불평형 방지, AT급전방식 사용, 이용률 92.8%, 중성점 접지 불가, 임피던스 정합 불가, 유도장애 발생"
+},{
+  title: "1-2. 변형우드브리지결선의 특징",
+  hint: "승스스전",
+  answers: [
+    {
+      letter: "승",
+      text: "승압용 단권변압기를 이용한 방식이다",
+      aliases: ["승압용 단권변압기", "단권변압기", "승압용"]
+    },
+    {
+      letter: "스",
+      text: "스코트결선 변압기와 동일한 기능을 가지면서 1차측에 중성점 접지를 취하는 방식",
+      aliases: ["스코트와 동일 기능", "1차측 중성점 접지", "중성점 접지"]
+    },
+    {
+      letter: "스",
+      text: "스코트결선의 결점을 보완한 방식",
+      aliases: ["스코트결선 보완", "결점 보완", "보완 방식"]
+    },
+    {
+      letter: "전",
+      text: "전기철도 장애 방지용으로 사용한다(일본)",
+      aliases: ["전기철도", "장애 방지", "일본 전철"]
+    }
+  ],
+  explain: "변형우드브리지결선은 승압용 단권변압기를 사용하고, 스코트결선의 기능과 결점을 보완하며, 중성점 접지가 가능하고 일본 전기철도에서 장애 방지용으로 사용됩니다."
+}
+
+
+
+
+
+
+
+
+
+
+];
+
+
+let isStarted = false;
+let current = 0;
+let activeLetters = [];
+let fallingLetters = [];
+
+
+  let score = 0;
+  let letterSpawnTimer = 0;
+  let lives = 3;
+  let isPaused = false;
+  let particles = [];
+  let failCount = 0;
+
+// ✅ 실패 횟수 표시 함수 (전역으로 이동)
+function updateFailCountUI() {
+  document.getElementById('failCountBox').textContent = `❌ Fail: ${failCount}`;
+}
+
+
+
+let matchMode = 'normal'; // 기본 모드
+
+let wasManuallyPaused = false;
+
+
+let animationFrameId = null;  // 🔥 애니메이션 ID 추적용
+
+
+
+
+    
+const LETTER_SPEED = 1.0; // ✅ 일정한 속도
+
+class FallingLetter {
+  constructor(id, letter, answer, x) {
+    this.id = id;           // 추가됨
+    this.letter = letter;
+    this.answer = answer;
+    this.x = x;
+    this.y = -50;
+    this.speed = LETTER_SPEED;
+    this.marked = false;
+  }
+
+      update() { this.y += this.speed; }
+      draw(ctx) {
+  ctx.font = '36px Orbitron';
+  ctx.fillStyle = '#00ffe1';
+  ctx.shadowColor = '#00ffff';
+  ctx.shadowBlur = 15;
+  ctx.fillText(this.letter, this.x, this.y);
+  ctx.shadowBlur = 0; // reset
+}
+
     }
 
-    function loadNextQuestion() {
-      document.getElementById('result').textContent = '';
-      if (currentIndex >= quizData.length) {
-        document.getElementById('question').textContent = '🎉 모든 문제를 완료했습니다!';
-        document.getElementById('answers').innerHTML = '';
-        document.getElementById('nextBtn').style.display = 'none';
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.dx = (Math.random() - 0.5) * 6;
+        this.dy = (Math.random() - 0.5) * 6;
+        this.life = 60;
+        this.size = 5 + Math.random() * 5;
+      }
+      update() {
+        this.x += this.dx;
+        this.y += this.dy;
+        this.life--;
+      }
+      draw(ctx) {
+        ctx.fillStyle = 'rgba(255, 255, 100, 0.8)';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+function spawnLetter(letterObj) {
+  const x = Math.random() * (canvas.width - 200) + 100;
+  fallingLetters.push(new FallingLetter(letterObj.id, letterObj.letter, letterObj.answer, x));
+}
+
+
+    function explode(x, y) {
+      for (let i = 0; i < 30; i++) {
+        particles.push(new Particle(x, y));
+      }
+    }
+
+    function animate() {
+      if (isPaused) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      letterSpawnTimer++;
+
+      if (letterSpawnTimer % 180 === 0) {
+        const remaining = activeLetters.filter(a =>
+  !fallingLetters.find(l => l.id === a.id)
+);
+
+        if (remaining.length > 0) {
+          const next = remaining[0];
+spawnLetter(next);
+
+        }
+      }
+
+      for (let i = fallingLetters.length - 1; i >= 0; i--) {
+        const l = fallingLetters[i];
+        l.update();
+        l.draw(ctx);
+        if (l.y > canvas.height + 30 && !l.marked) {
+          fallingLetters.splice(i, 1);
+          score -= 1;
+          scoreBox.textContent = `점수: ${score}`;
+        }
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.update();
+        p.draw(ctx);
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+
+
+
+ animationFrameId = requestAnimationFrame(animate); // ✅ 중복 방지
+
+
+
+    }
+
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+
+
+function loadQuestion() {
+  const q = quizData[current];
+  textInput.value = '';
+  explainBox.style.display = 'none';
+  document.getElementById('fullHintPopup').style.display = 'none'; // ✅ 팝업 초기화
+
+  questionBox.textContent = q.title;
+  questionBox.style.display = 'block';
+
+  activeLetters = [...q.hint].map((char, i) => ({
+    id: i,
+    letter: char,
+    answer: q.answers[i]
+  }));
+
+  letterSpawnTimer = 0;
+  isPaused = false;
+  failCount = 0;
+  updateFailCountUI(); // ✅ 실패 횟수 UI 초기화
+  updateProgressUI();  // ✅ 진행률도 업데이트
+
+  if (!quizData || quizData.length === 0) return; // ✅ 이 부분도 안에 있어야 함
+}
+
+
+
+
+
+textInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+
+    // 🔸 첫 시작 시: 인트로 화면 제거 + 문제 시작
+    if (!isStarted) {
+      isStarted = true;
+      document.getElementById('startScreen').style.display = 'none';
+      questionBox.style.display = 'block';
+      loadQuestion();
+      updateStatusBox();
+      setTimeout(() => {
+        textInput.focus();
+        textInput.select();  // 선택까지 해주면 확실
+      }, 0);
+
+      return;  // 여기서 종료. 아래는 실행 안 됨.
+    }
+
+     if (isStarted && activeLetters.length === 0 && fallingLetters.length === 0) {
+      if (current + 1 >= quizData.length) {
+        document.getElementById('congratsScreen').style.display = 'flex';
         return;
       }
-      const q = quizData[currentIndex];
-      document.getElementById('question').textContent = q.question;
-      const answersBox = document.getElementById('answers');
-      answersBox.innerHTML = '';
-      q.options.forEach((opt, i) => {
-        const btn = document.createElement('button');
-        btn.textContent = opt;
-        btn.onclick = () => checkAnswer(opt, q.answer);
-        answersBox.appendChild(btn);
-      });
+      // 다음 문제로 이동
+      current++;
+      loadQuestion();
+      updateStatusBox();
+      textInput.value = '';
+    }if (document.getElementById('congratsScreen').style.display === 'flex' && e.key === 'Enter') {
+    restartQuiz();
+    document.getElementById('startScreen').style.display = 'none';
+      return;
     }
 
-    function checkAnswer(selected, correct) {
-      const resultBox = document.getElementById('result');
-      if (selected === correct) {
-        resultBox.textContent = '✅ 정답입니다!';
-        resultBox.style.color = '#00ff99';
-      } else {
-        resultBox.textContent = `❌ 오답입니다. 정답: ${correct}`;
-        resultBox.style.color = '#ff3366';
+
+
+
+
+    // 🔹 이미 시작된 경우: 정답 체크 로직
+    const input = textInput.value.trim();
+    let matched = false;
+    for (let i = 0; i < fallingLetters.length; i++) {
+      const l = fallingLetters[i];
+      if (!l.marked && isMatchingAnswer(input, l.answer)) {
+        playSound("sfx-correct");
+        l.marked = true;
+        explode(l.x, l.y);
+        showFloatingText(l.x, l.y);
+        score += 1;
+        scoreBox.textContent = `점수: ${score}`;
+        fallingLetters.splice(i, 1);
+activeLetters = activeLetters.filter(a => a.id !== l.id);
+
+        updateProgressUI();
+        matched = true;
+        break;
       }
-      currentIndex++;
     }
 
-    fetchQuiz();
+       if (matched) {
+      setTimeout(() => {
+      if (activeLetters.length === 0 && fallingLetters.length === 0) {
+  if (current + 1 >= quizData.length || !quizData[current + 1]) {
+    document.getElementById('congratsScreen').style.display = 'flex';
+    return;
+  }
+
+
+  const box = document.getElementById('questionBox');
+  box.classList.add('fade-out');
+  setTimeout(() => {
+    playSound("sfx-next");
+    current++;
+    loadQuestion();
+    box.classList.remove('fade-out');
+    box.classList.add('fade-in');
+    setTimeout(() => box.classList.remove('fade-in'), 500);
+  }, 500);
+}
+      }, 100);
+    }
+                  
+
+if (!matched) {
+  playSound("sfx-wrong");
+  failCount++;
+  updateFailCountUI(); // ✅ 여기 추가
+
+  // 🎯 해설은 정확히 5번째 틀렸을 때만
+  if (failCount === 5) {
+    document.getElementById("hintText").textContent = quizData[current].explain;
+    explainBox.classList.add('visible');
+    explainBox.style.display = 'block';
+  }
+
+  // 🎯 전체 보기 팝업은 정확히 10번째 틀렸을 때만
+  if (failCount === 10) {
+    const fullHintBox = document.getElementById('fullHintPopup');
+    const content = document.getElementById('fullHintContent');
+    const currentQuiz = quizData[current];
+    let html = `<strong>문제:</strong> ${currentQuiz.title}<br><br>`;
+    html += `<strong>힌트:</strong> ${currentQuiz.hint}<br><br>`;
+    html += `<strong>정답 목록:</strong><br><ul>`;
+    currentQuiz.answers.forEach(ans => {
+      html += `<li><strong>${ans.letter}</strong>: ${ans.text}</li>`;
+    });
+    html += `</ul><br><em style="color:#ccc;">※ 학습용으로 정답 전체를 보여드립니다.</em>`;
+    content.innerHTML = html;
+    fullHintBox.style.display = 'block';
+  }
+
+  setTimeout(() => textInput.classList.remove('shake'), 300);
+
+
+
+
+
+          if (failCount >= 5) {
+            document.getElementById("hintText").textContent = quizData[current].explain;
+explainBox.classList.add('visible');
+           explainBox.style.display = 'block';
+          }
+          textInput.classList.add('shake');
+          setTimeout(() => textInput.classList.remove('shake'), 300);
+        }
+        textInput.value = '';
+      }   
+    });
+
+
+function isMatchingAnswer(userInput, answerObj) {
+  const normalize = str =>
+    str.replace(/\s/g, '')
+       .replace(/[^\w가-힣]/g, '')
+       .toLowerCase();
+
+  const input = normalize(userInput);
+  const base = normalize(answerObj.text);
+  const aliases = (answerObj.aliases || []).map(normalize);
+
+  if (matchMode === 'strict') {
+    return input === base || aliases.includes(input);
+  }
+
+  if (matchMode === 'normal') {
+    const wordsMatch = (inputRaw, targetRaw) => {
+      const tokenize = str => str.match(/[가-힣\w]+/g) || [];
+      const inputWords = tokenize(inputRaw);
+      const targetWords = tokenize(targetRaw);
+      return targetWords.every(tw => inputWords.some(iw => iw.includes(tw)));
+    };
+    return input.includes(base)
+        || aliases.some(a => input.includes(a))
+        || wordsMatch(userInput, answerObj.text)
+        || aliases.some(alias => wordsMatch(userInput, alias));
+  }
+
+  if (matchMode === 'fuzzy') {
+    return getSimilarity(input, base) >= 0.8
+        || aliases.some(alias => getSimilarity(input, alias) >= 0.8);
+  }
+
+  return false;
+}
+
+
+function getSimilarity(a, b) {
+  const distance = levenshtein(a, b);
+  return 1 - distance / Math.max(a.length, b.length);
+}
+
+function levenshtein(a, b) {
+  const matrix = Array.from({ length: a.length + 1 }, () => []);
+  for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+  for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return matrix[a.length][b.length];
+}
+
+
+
+
+shuffleArray(quizData);
+animate();
+textInput.focus();
+document.getElementById('statusBox').textContent = '진행: - / -';
+
+// ✅ 여기 아래에 바로 추가하세요
+document.querySelectorAll('input[name="mode"]').forEach(radio => {
+  radio.addEventListener('change', (e) => {
+    matchMode = e.target.value;
+    console.log(`✅ 정답 체크 모드 변경됨: ${matchMode}`);
+  });
+});
+
+
+
+// ✅ 인트로 화면 클릭 시 textInput에 포커스
+document.getElementById('startScreen').addEventListener('click', () => {
+  textInput.focus();
+});
+// ✅ 완료 화면 숨김 초기화 (인트로에서 잠깐 보이는 것 방지)
+document.getElementById('congratsScreen').style.display = 'none';
+
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const fullHintBox = document.getElementById('fullHintPopup');
+
+    if (fullHintBox.style.display === 'block') {
+      closeFullHintPopup(); // ✅ 이걸로 교체
+    } else {
+      openFullHintManually();
+    }
+  }
+
+
+
+
+
+
+  
+  // ✅ Shift + →로 문제 스킵
+  if (e.shiftKey && e.key === 'ArrowRight') {
+    if (!isStarted || isPaused) return;
+
+    if (current + 1 >= quizData.length) {
+      document.getElementById('congratsScreen').style.display = 'flex';
+      return;
+    }
+
+
+    
+
+    current++;
+      failCount = 0; // ✅ 이 줄을 추가하세요!!!
+updateFailCountUI(); // ✅ 초기화 시 UI 반영
+
+
+
+
+    loadQuestion();
+    updateStatusBox();
+    playSound("sfx-next");
+
+    // 효과적으로 다음 문제 넘어갈 수 있게 입력창 초기화
+    textInput.value = '';
+    explainBox.style.display = 'none';
+    explainBox.classList.remove('visible');
+    return;
+  }
+
+  // 기존 Enter 관련 포커스 복구
+  if (e.key === 'Enter') {
+    const isInputFocused = (document.activeElement.id === 'textInput');
+    const isStartScreen = document.getElementById('startScreen').style.display !== 'none';
+    const isCongratsScreen = document.getElementById('congratsScreen').style.display === 'flex';
+
+    if (isStartScreen || isCongratsScreen) return;
+
+    if (!isInputFocused) {
+      e.preventDefault();
+      textInput.focus();
+      textInput.select();  // 텍스트 전체 선택 (UX 향상)
+    }
+  }
+});
+
+
+document.addEventListener("visibilitychange", function () {
+  if (document.hidden) {
+    cancelAnimationFrame(animationFrameId); // ✅ 루프 중지
+  } else {
+    // 수동 일시정지 중이 아니고, 게임이 시작된 상태면 재개
+    if (!wasManuallyPaused && isStarted) {
+      animate(); // ✅ 중복 방지된 안전한 재시작
+    }
+  }
+});
+
+
+
+
+
   </script>
+
+
+
+<div id="fullHintPopup" style="
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.95);
+  color: #00ffe1;
+  font-family: 'Pretendard', sans-serif;
+  z-index: 9999;
+  padding: 40px 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+">
+
+  <div style="max-width: 600px; margin: 0 auto; background: #111; border: 1px solid #00ffe1; padding: 20px; border-radius: 12px;">
+    <h2 style="text-align: center; margin-top: 0; font-family: 'Orbitron'; font-size: 1.5rem;">💡 힌트 전체 보기</h2>
+    <div id="fullHintContent" style="font-size: 1rem; line-height: 1.6;"></div>
+
+
+<button onclick="closeFullHintPopup()" style="
+background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--main-accent);
+  border-radius: 12px;
+  color: var(--main-accent);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.95rem;
+  padding: 6px 12px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+">
+  닫기 ✖
+</button>
+
+</div>
+
+
+
+
+
+
+  </div>
+</div>
+
 </body>
 </html>
