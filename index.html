@@ -28,6 +28,21 @@
 
   <style>
 
+
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(179, 139, 255, 0.3);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 20px rgba(179, 139, 255, 0.6);
+  }
+}
+
+
+
+
 :root {
   --main-accent: #b38bff; /* 귀여운 보라빛 강조색 */
   --bg-dark: #0a0a0a;
@@ -532,6 +547,25 @@ background: rgba(255, 255, 255, 0.06);
 ">
   🧠 <strong>타자 드롭 퀴즈++</strong><br><br>
   <span style="font-size: 1rem; color: #999">Enter 키 입력 혹은 터치하여 시작하세요</span>
+  <button id="startBtn" style="
+  margin-top: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--main-accent);
+  border-radius: 12px;
+  color: var(--main-accent);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.2rem;
+  padding: 10px 20px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+animation: pulseGlow 2s infinite ease-in-out;
+
+
+">
+  ▶ 시작하기
+</button>
+
 </div>
 
 
@@ -543,6 +577,7 @@ background: rgba(255, 255, 255, 0.06);
 
 
 
+document.getElementById('startBtn').addEventListener('click', startQuiz);
 
 
 
@@ -1294,8 +1329,6 @@ function startQuiz() {
 
 // 모바일 터치 또는 클릭으로 시작
 const startScreen = document.getElementById('startScreen');
-startScreen.addEventListener('click', startQuiz);
-startScreen.addEventListener('touchstart', startQuiz);
 
 
 
