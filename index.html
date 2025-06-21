@@ -29,6 +29,26 @@
   <style>
 
 
+body.compact-mode #topUI > div,
+body.compact-mode #textInput,
+body.compact-mode #questionBox,
+body.compact-mode #explainBox,
+body.compact-mode #modeSelector {
+  font-size: 0.75rem !important;
+  padding: 4px 6px !important;
+}
+
+body.compact-mode #textInput {
+  font-size: 1rem !important;
+  width: 80vw !important;
+}
+
+body.compact-mode #questionBox {
+  font-size: 1.2rem !important;
+}
+
+
+
 @keyframes pulseGlow {
   0%, 100% {
     transform: scale(1);
@@ -300,51 +320,26 @@ body::before {
 
 
 
+#topUI {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 999;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
 
-
-@media (max-width: 480px) {
-  #textInput {
-    width: 90vw;
-    font-size: 1.2rem;
-  }
-
-  #questionBox {
-    font-size: 1.4rem;
-    top: 20px;
-  }
-
-  #explainBox {
-    font-size: 1rem;
-    padding: 8px;
-  }
-
-  #scoreBox, #failCountBox, #statusBox {
-    font-size: 0.85rem;
-  }
-
-  #modeSelector {
-    flex-direction: column;
-    font-size: 0.9rem;
-    left: 10px;
-    top: 100px;
-  }
-
-  #manualHintButton,
-  #restartCurrentBtn {
-    bottom: 10px;
-    transform: scale(0.9);
-  }
-
-  #restartCurrentBtn {
-    right: 10px;
-    left: auto;
-  }
-
-  #startScreen,
-  #congratsScreen {
-    font-size: 1.5rem;
-    padding: 20px;
-  }
+#topUI > div {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: 'Orbitron', sans-serif;
+  color: #00ffe1;
 }
 
 
@@ -352,6 +347,8 @@ body::before {
   </style>
 </head>
 <body>
+
+
 
 
 <!-- ✅ 전체 힌트 보기 수동 버튼 -->
@@ -403,43 +400,11 @@ background: rgba(255, 255, 255, 0.06);
 
 
 
-<div id="statusBox" style="
-  position: fixed;
-  top: 10px;
-  right: 20px;
-  background: rgba(0,0,0,0.7);
-  color: #00ffff;
-  padding: 8px 16px;
-  border-radius: 12px;
-  font-family: 'Orbitron', sans-serif;
-  font-size: 14px;
-  z-index: 999;
-">
-  진행: 1 / ?
-</div>
 
 
 
 
 
-<div id="modeSelector" style="
-  position: fixed;
-  top: 10px;
-  left: 200px; /* ← 여기만 변경 */
-  z-index: 999;
-  background: rgba(0,0,0,0.6);
-  border-radius: 10px;
-  padding: 6px 12px;
-  display: flex;
-  gap: 10px;
-  font-size: 12px;
-  font-family: 'Orbitron', sans-serif;
-  color: #00ffe1;
-">
-  <label><input type="radio" name="mode" value="strict"> Strict</label>
-  <label><input type="radio" name="mode" value="normal" checked> Normal</label>
-  <label><input type="radio" name="mode" value="fuzzy"> Fuzzy</label>
-</div>
 
 
 <div id="skipHint" style="
@@ -468,6 +433,8 @@ padding:1rem 2rem; border:2px solid #00ffe1; z-index:20;">
 ⏸ 일시정지 중
 </div>
 
+
+<div id="topUI">
   <div id="scoreBox">점수: 0</div>
 <div id="failCountBox" style="
   position: absolute;
@@ -482,6 +449,40 @@ padding:1rem 2rem; border:2px solid #00ffe1; z-index:20;">
   z-index: 100;
 ">
   ❌ Fail: 0
+</div>
+
+<div id="statusBox" style="
+  position: fixed;
+  top: 10px;
+  right: 20px;
+  background: rgba(0,0,0,0.7);
+  color: #00ffff;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  z-index: 999;
+">
+  진행: 1 / ?
+</div>
+<div id="modeSelector" style="
+  position: fixed;
+  top: 10px;
+  left: 200px; /* ← 여기만 변경 */
+  z-index: 999;
+  background: rgba(0,0,0,0.6);
+  border-radius: 10px;
+  padding: 6px 12px;
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  font-family: 'Orbitron', sans-serif;
+  color: #00ffe1;
+">
+  <label><input type="radio" name="mode" value="strict"> Strict</label>
+  <label><input type="radio" name="mode" value="normal" checked> Normal</label>
+  <label><input type="radio" name="mode" value="fuzzy"> Fuzzy</label>
+</div>
 </div>
 
 
@@ -571,9 +572,29 @@ animation: pulseGlow 2s infinite ease-in-out;
 
 
 
+
+
+
+
   <script>
 
 
+function isMobile() {
+  return /iPhone|Android/i.test(navigator.userAgent);
+}
+
+window.addEventListener('resize', () => {
+  if (!isMobile()) return;
+
+  const ratio = window.innerHeight / window.outerHeight;
+  const isKeyboardUp = ratio < 0.75;
+
+  if (isKeyboardUp) {
+    document.body.classList.add('compact-mode');
+  } else {
+    document.body.classList.remove('compact-mode');
+  }
+});
 
 
 
@@ -642,6 +663,7 @@ function openFullHintManually() {
 
 
 function restartQuiz() {
+   isStarted = true;  // 🔥 추가
   current = 0;
   score = 0;
   failCount = 0;
@@ -1017,15 +1039,15 @@ function loadQuestion() {
 textInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
 
-if (e.key === 'Enter') {
   const isInputFocused = (document.activeElement.id === 'textInput');
   const isStartScreen = document.getElementById('startScreen').style.display !== 'none';
   const isCongratsScreen = document.getElementById('congratsScreen').style.display === 'flex';
 
-  if (isStartScreen) {
-    startQuiz(); // 이 함수는 아래에서 추가함
-    return;
-  }
+
+if ((isStartScreen || !isStarted) && e.key === 'Enter') {
+  startQuiz();
+  return;
+}
 
   if (isCongratsScreen) return;
 
@@ -1034,7 +1056,7 @@ if (e.key === 'Enter') {
     textInput.focus();
     textInput.select();
   }
-}
+
 
 
      if (isStarted && activeLetters.length === 0 && fallingLetters.length === 0) {
@@ -1212,7 +1234,6 @@ function levenshtein(a, b) {
 
 
 shuffleArray(quizData);
-animate();
 textInput.focus();
 document.getElementById('statusBox').textContent = '진행: - / -';
 
@@ -1319,11 +1340,13 @@ function startQuiz() {
   questionBox.style.display = 'block';
   loadQuestion();
   updateStatusBox();
+  animate();  // 👉 여기에서 처음으로 실행!
   setTimeout(() => {
     textInput.focus();
     textInput.select();
   }, 0);
 }
+
 
 
 
