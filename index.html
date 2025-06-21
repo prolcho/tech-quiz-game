@@ -531,13 +531,20 @@ background: rgba(255, 255, 255, 0.06);
   text-align: center;
 ">
   🧠 <strong>타자 드롭 퀴즈++</strong><br><br>
-  <span style="font-size: 1rem; color: #999">Enter 키를 눌러 시작하세요</span>
+  <span style="font-size: 1rem; color: #999">Enter 키 입력 혹은 터치하여 시작하세요</span>
 </div>
 
 
 
 
   <script>
+
+
+
+
+
+
+
 
 
 function restartCurrentQuestion() {
@@ -975,20 +982,25 @@ function loadQuestion() {
 textInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
 
-    // 🔸 첫 시작 시: 인트로 화면 제거 + 문제 시작
-    if (!isStarted) {
-      isStarted = true;
-      document.getElementById('startScreen').style.display = 'none';
-      questionBox.style.display = 'block';
-      loadQuestion();
-      updateStatusBox();
-      setTimeout(() => {
-        textInput.focus();
-        textInput.select();  // 선택까지 해주면 확실
-      }, 0);
+if (e.key === 'Enter') {
+  const isInputFocused = (document.activeElement.id === 'textInput');
+  const isStartScreen = document.getElementById('startScreen').style.display !== 'none';
+  const isCongratsScreen = document.getElementById('congratsScreen').style.display === 'flex';
 
-      return;  // 여기서 종료. 아래는 실행 안 됨.
-    }
+  if (isStartScreen) {
+    startQuiz(); // 이 함수는 아래에서 추가함
+    return;
+  }
+
+  if (isCongratsScreen) return;
+
+  if (!isInputFocused) {
+    e.preventDefault();
+    textInput.focus();
+    textInput.select();
+  }
+}
+
 
      if (isStarted && activeLetters.length === 0 && fallingLetters.length === 0) {
       if (current + 1 >= quizData.length) {
@@ -1262,6 +1274,28 @@ document.addEventListener("visibilitychange", function () {
   }
 });
 
+
+
+
+function startQuiz() {
+  if (isStarted) return;
+  isStarted = true;
+  document.getElementById('startScreen').style.display = 'none';
+  questionBox.style.display = 'block';
+  loadQuestion();
+  updateStatusBox();
+  setTimeout(() => {
+    textInput.focus();
+    textInput.select();
+  }, 0);
+}
+
+
+
+// 모바일 터치 또는 클릭으로 시작
+const startScreen = document.getElementById('startScreen');
+startScreen.addEventListener('click', startQuiz);
+startScreen.addEventListener('touchstart', startQuiz);
 
 
 
