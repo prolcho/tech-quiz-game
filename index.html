@@ -28,6 +28,35 @@
   <style>
 
 
+#modeSelector label { display:flex; align-items:center; gap:6px; cursor:pointer; }
+#modeSelector input[type="radio"] { transform: translateY(1px); }
+@supports (accent-color: auto) {
+  #modeSelector input[type="radio"] { accent-color: #00ffe1; }
+}
+
+
+/* 기존 #modeSelector 스타일 전부 지우고 ↓ 이걸로 교체 */
+/* ✅ 전역에 둡니다: position: fixed 제거 버전 */
+#modeSelector{
+  background: rgba(0,0,0,0.6);
+  border-radius: 10px;
+  padding: 6px 12px;
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  font-family: 'Orbitron', sans-serif;
+  color: #00ffe1;
+}
+
+/* ✅ 모바일에선 줄 바꿈 허용 */
+@media (max-width:480px){
+  #modeSelector{
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 0.9rem;
+  }
+}
+
 body.compact-mode #topUI > div,
 body.compact-mode #textInput,
 body.compact-mode #questionBox,
@@ -278,14 +307,9 @@ body::before {
     font-size: 0.9rem;
   }
 
-  #modeSelector {
-    flex-direction: column;
-    gap: 6px;
-    font-size: 0.9rem;
-    padding: 8px;
-    left: 10px;
-    top: 100px;
-  }
+
+
+
 
   #manualHintButton,
   #restartCurrentBtn {
@@ -415,6 +439,83 @@ input, textarea { font-size: 16px; }
 canvas { position: fixed; inset: 0; z-index: 0; }
 .hud-top, #questionBox, #progressBox, #inputBox, #explainBox, #floatingTextContainer { z-index: 1002; }
 
+/* === 고무줄 스크롤(흰 화면) 방지 기본 설정 === */
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #0a0a0a;            /* 혹시 노출돼도 검정으로 보이게 */
+  overscroll-behavior: none;       /* 최상단/최하단 끌어도 바깥으로 스크롤 안 새어 나감 */
+}
+
+/* 내부 스크롤 쓰는 컨테이너들은 체이닝(바깥으로 튀는 것) 막기 */
+.stage {
+  overscroll-behavior: contain;    /* 컨테이너 끝에서 더 끌어도 바깥(body)로 안 넘어감 */
+  -webkit-overflow-scrolling: touch; /* iOS 관성 스크롤 유지 (부드러움) */
+}
+
+/* 전체 힌트 팝업도 스크롤은 하되 바깥으로는 안 새게 */
+#fullHintPopup {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* 혹시 “팝업 열렸을 때 바디 스크롤 잠그기”가 필요하면 이 클래스 사용 */
+body.lock-scroll {
+  height: 100vh;
+  overflow: hidden;
+}
+
+
+/* ===== 상단/하단 레이아웃 겹침 해결 ===== */
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #0a0a0a;
+  overscroll-behavior: none; /* 흰 화면 방지(당겨도 바깥 스크롤 안 튐) */
+}
+
+/* HUD 실제 높이를 반영해 질문/진행점이 HUD 아래에 오도록 */
+#questionBox, #progressBox {
+  position: fixed !important;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1002;
+}
+#questionBox {
+  top: calc(env(safe-area-inset-top) + var(--hudH) + 6px) !important;
+}
+#progressBox {
+  top: calc(env(safe-area-inset-top) + var(--hudH) + 56px) !important;
+}
+
+/* 해설 박스가 입력창/키보드와 겹치지 않게 하단 여유 */
+#explainBox {
+  position: fixed !important;
+  left: 0; right: 0;
+  bottom: calc(env(safe-area-inset-bottom) + var(--kb) + 72px) !important;
+  z-index: 1002;
+}
+
+/* 내부 스크롤 쓰는 영역은 바깥으로 스크롤 체이닝 금지 */
+.stage, #fullHintPopup {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 팝업 떠 있을 때 바디 스크롤 잠그고 싶으면 이 클래스 토글 */
+body.lock-scroll { height: 100vh; overflow: hidden; }
+
+/* ====== 타일 ‘팡!’ 사라짐 애니메이션 ====== */
+.quiz-row .ch.pop {
+  animation: popOut 280ms ease forwards;
+}
+@keyframes popOut {
+  0%   { transform: scale(1);   opacity: 1; }
+  60%  { transform: scale(1.25);}
+  100% { transform: scale(0.6); opacity: 0; filter: blur(2px); }
+}
+
+
 
   </style>
 </head>
@@ -424,16 +525,21 @@ canvas { position: fixed; inset: 0; z-index: 0; }
 <div class="app">
 <div class="hud-top" id="hudTop">
   <div id="scoreBox">점수: 0</div>
-
-
-
   <div id="failCountBox">❌ Fail: 0</div>
-
- <button id="pauseBtn" onclick="togglePause()" style="
+  <button id="pauseBtn" onclick="togglePause()" style="
     background:#111; color:#00ffe1; border:1px solid #00ffe1;
     padding:6px 12px; border-radius:8px; font-size:.9rem;">
     ⏸ 일시정지
-  </button></div>
+  </button>
+
+  <!-- ✅ HUD 안으로 이동 -->
+  <div id="modeSelector">
+    <label><input type="radio" name="mode" value="strict"> Strict</label>
+    <label><input type="radio" name="mode" value="normal" checked> Normal</label>
+    <label><input type="radio" name="mode" value="fuzzy"> Fuzzy</label>
+  </div>
+</div>
+
   
 
 
@@ -540,25 +646,7 @@ padding:1rem 2rem; border:2px solid #00ffe1; z-index:20;">
 ">
   진행: 1 / ?
 </div>
-<div id="modeSelector" style="
-  position: fixed;
-  top: 10px;
-  left: 200px; /* ← 여기만 변경 */
-  z-index: 999;
-  background: rgba(0,0,0,0.6);
-  border-radius: 10px;
-  padding: 6px 12px;
-  display: flex;
-  gap: 10px;
-  font-size: 12px;
-  font-family: 'Orbitron', sans-serif;
-  color: #00ffe1;
-">
-  <label><input type="radio" name="mode" value="strict"> Strict</label>
-  <label><input type="radio" name="mode" value="normal" checked> Normal</label>
-  <label><input type="radio" name="mode" value="fuzzy"> Fuzzy</label>
-</div>
-</div>
+
 
 
 
@@ -1309,6 +1397,7 @@ if (STATIC_MODE) {
 
     // 목표 하나 제거
     activeLetters.shift();
+    popAndRemoveFirstTile();
     updateProgressUI();
 
     // 문제 완료 시 다음 문제로
@@ -1371,7 +1460,7 @@ if (STATIC_MODE) {
         scoreBox.textContent = `점수: ${score}`;
         fallingLetters.splice(i, 1);
 activeLetters = activeLetters.filter(a => a.id !== l.id);
-
+popAndRemoveTileById(l.id);   // ← 이 줄 추가 (해당 타일 팡!)
         updateProgressUI();
         matched = true;
         break;
@@ -1724,16 +1813,53 @@ function renderChars(text){
   const row=document.getElementById('quizRow');
   if(!row) return;
   row.innerHTML='';
-  [...text].forEach(c=>{
+  [...text].forEach((c, idx)=>{
     const s=document.createElement('span');
     s.className='ch';
     s.textContent=c;
+    s.dataset.id = idx;        // ← 나중에 어떤 글자인지 찾을 표식
     row.appendChild(s);
   });
+}
+
+function popAndRemoveTileById(id){
+  const row = document.getElementById('quizRow');
+  if(!row) return;
+  const el = row.querySelector(`.ch[data-id="${id}"]`);
+  if(!el) return;
+  el.classList.add('pop');
+  setTimeout(()=>el.remove(), 280);
+}
+
+function popAndRemoveFirstTile(){
+  const row = document.getElementById('quizRow');
+  if(!row) return;
+  const el = row.querySelector('.ch');
+  if(!el) return;
+  el.classList.add('pop');
+  setTimeout(()=>el.remove(), 280);
 }
 // 예시: renderChars('건축전기설비기술사');
 </script>
 
+<script>
+  // 구형 iOS에서 overscroll-behavior가 불안하면 바깥 영역 터치 이동 자체를 막아준다.
+  (function () {
+    const ALLOW = ['#fullHintPopup', '.stage']; // 스크롤 허용할 영역
+
+    document.addEventListener('touchmove', function (e) {
+      const ok = ALLOW.some(sel => e.target.closest(sel));
+      if (!ok) {
+        e.preventDefault(); // 바깥 영역의 고무줄(흰 화면) 방지
+      }
+    }, { passive: false });
+
+    // 팝업 열릴 때 바디 스크롤 잠그고 싶으면:
+    // document.body.classList.add('lock-scroll');
+    // 닫을 때:
+    // document.body.classList.remove('lock-scroll');
+  })();
+</script>
 
 </body>
 </html>
