@@ -554,12 +554,14 @@ body.lock-scroll { height: 100vh; overflow: hidden; }
 }
 
 
-#skipHint{
+#skipHint {
   position: fixed;
-  right: 20px;
-  top: calc(env(safe-area-inset-top) + var(--hudH) + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom) + var(--kb) + 140px); /* 입력창 위쪽 여유 */
   z-index: 1002;
 }
+
 
 #skipHint #skipBtn{
   font-size: 0.9rem;
