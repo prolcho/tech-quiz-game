@@ -1,12 +1,16 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+
+<!-- 추가 -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+
   <audio id="sfx-correct" src="correct.wav" preload="auto"></audio>
 <audio id="sfx-wrong" src="wrong.wav" preload="auto"></audio>
 <audio id="sfx-next" src="next.wav" preload="auto"></audio>
 
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
   <title>타자 드롭 퀴즈++</title>
 
@@ -16,12 +20,7 @@
   <!-- Head에 추가 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css" />
 
-<button id="pauseBtn" onclick="togglePause()" style="
-  position: absolute; top: 10px; left: 100px; z-index: 10;
-  background: #111; color: #00ffe1; border: 1px solid #00ffe1;
-  padding: 6px 12px; border-radius: 6px; font-size: 0.9rem;">
-⏸ 일시정지
-</button>
+
 
   
 
@@ -74,14 +73,16 @@ body.compact-mode #questionBox {
 
 
 
-    html, body {
-      margin: 0; padding: 0; background: linear-gradient(180deg, #0a0a0a, #1a1a1a); overflow: hidden;
-      /* 기존 Gowun Dodum 교체 */
+   html, body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(180deg, #0a0a0a, #1a1a1a);
+  overflow: hidden;
+}
 body {
   font-family: 'Pretendard', 'Orbitron', sans-serif;
 }
 
-    }
     canvas { display: block; }
 
     #questionBox {
@@ -91,7 +92,7 @@ body {
     }
 
     #scoreBox {
-      position: absolute; top: 10px; left: 20px;
+      top: 10px; left: 20px;
       color: #ffffff; font-size: 1rem; z-index: 10;
     }
 
@@ -344,10 +345,101 @@ body::before {
 
 
     /* UI 버튼 스타일 추가 예정 시 */
+
+
+/* === Keyboard & Layout overrides (추가) === */
+:root { --kb: 0px; --footerH: 56px; --hudH: 48px; }
+
+html, body { height: 100dvh; -webkit-text-size-adjust: 100%; }
+body { overflow: hidden; } /* 내부 컨테이너만 스크롤 */
+
+.app { min-height: 100dvh; display: grid; grid-template-rows: 1fr; }
+
+.hud-top{
+    
+  position: fixed; top: calc(env(safe-area-inset-top) + 6px);
+  left: 50%; transform: translateX(-50%); z-index: 1001;
+  display:flex; gap:8px; flex-wrap:wrap; max-width:min(720px,94vw);
+
+
+  
+}
+
+/* 중앙 표시 영역 */
+.stage{
+  position: relative; height: 100dvh; overflow:auto;
+  display:flex; align-items:center; justify-content:center;
+  padding:
+    calc(env(safe-area-inset-top) + var(--hudH) + 12px)
+    16px
+    calc(env(safe-area-inset-bottom) + var(--kb) + var(--footerH) + 12px);
+}
+
+/* 문자 타일 행 */
+.quiz-row{
+  display:flex; flex-wrap:wrap; justify-content:center; align-items:center;
+  gap:8px 10px; max-width:min(720px,92vw);
+}
+
+/* 문자 타일: 애니/이동 전부 끄기 (덮어쓰기) */
+.quiz-row .ch{
+  display:inline-flex; justify-content:center; align-items:center;
+  width: clamp(28px, 8vw, 44px); height: clamp(28px, 8vw, 44px);
+  font-size: clamp(16px, 4.5vw, 22px); font-weight:600; letter-spacing:.02em;
+  border-radius:10px; border:1px solid rgba(53,246,215,.25);
+  box-shadow: 0 0 12px rgba(53,246,215,.35);
+  background:#000; color:#35f6d7;
+  /* ↓ 기존 효과를 강제로 무력화 */
+  position: static !important;
+  transform: none !important;
+  animation: none !important;
+  transition: none !important;
+}
+
+/* 입력창: absolute → fixed (덮어쓰기) */
+#inputBox{
+  position: fixed !important;
+  left:50%;
+  transform: translateX(-50%) translateY(calc(var(--kb) * -1));
+  bottom: calc(env(safe-area-inset-bottom) + 10px);
+  z-index: 1002;
+}
+
+/* 자동 줌 방지 */
+input, textarea { font-size: 16px; }
+
+/* HUD 안의 아이템은 고정 좌표를 없애서 겹침 방지 */
+.hud-top > * { position: static !important; }
+
+
+canvas { position: fixed; inset: 0; z-index: 0; }
+.hud-top, #questionBox, #progressBox, #inputBox, #explainBox, #floatingTextContainer { z-index: 1002; }
+
+
   </style>
 </head>
 <body>
 
+
+<div class="app">
+<div class="hud-top" id="hudTop">
+  <div id="scoreBox">점수: 0</div>
+
+
+
+  <div id="failCountBox">❌ Fail: 0</div>
+
+ <button id="pauseBtn" onclick="togglePause()" style="
+    background:#111; color:#00ffe1; border:1px solid #00ffe1;
+    padding:6px 12px; border-radius:8px; font-size:.9rem;">
+    ⏸ 일시정지
+  </button></div>
+  
+
+
+  <main class="stage">
+    <div id="quizRow" class="quiz-row"></div>
+  </main>
 
 
 
@@ -433,23 +525,6 @@ padding:1rem 2rem; border:2px solid #00ffe1; z-index:20;">
 ⏸ 일시정지 중
 </div>
 
-
-<div id="topUI">
-  <div id="scoreBox">점수: 0</div>
-<div id="failCountBox" style="
-  position: absolute;
-  top: 80px;
-  right: 20px;
-  color: #ff8888;
-  font-family: 'Orbitron', sans-serif;
-  font-size: 16px;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 6px 10px;
-  border-radius: 6px;
-  z-index: 100;
-">
-  ❌ Fail: 0
-</div>
 
 <div id="statusBox" style="
   position: fixed;
@@ -579,6 +654,9 @@ animation: pulseGlow 2s infinite ease-in-out;
   <script>
 
 
+const STATIC_MODE = true;
+
+
 function isMobile() {
   return /iPhone|Android/i.test(navigator.userAgent);
 }
@@ -695,7 +773,8 @@ function togglePause() {
   pauseBox.style.display = isPaused ? 'block' : 'none';
   pauseBtn.textContent = isPaused ? "▶ 재개" : "⏸ 일시정지";
 
-  if (!isPaused) animate();
+ if (!isPaused && !STATIC_MODE) animate();
+
 }
 
 
@@ -1096,47 +1175,42 @@ function spawnLetter(letterObj) {
     }
 
     function animate() {
-      if (isPaused) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      letterSpawnTimer++;
+  // 정적 모드이거나 일시정지면 루프 시작/유지 안 함
+  if (isPaused || STATIC_MODE) return;
 
-      if (letterSpawnTimer % 180 === 0) {
-        const remaining = activeLetters.filter(a =>
-  !fallingLetters.find(l => l.id === a.id)
-);
+  // 캔버스 프레임 초기화
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        if (remaining.length > 0) {
-          const next = remaining[0];
-spawnLetter(next);
-
-        }
-      }
-
-      for (let i = fallingLetters.length - 1; i >= 0; i--) {
-        const l = fallingLetters[i];
-        l.update();
-        l.draw(ctx);
-        if (l.y > canvas.height + 30 && !l.marked) {
-          fallingLetters.splice(i, 1);
-          score -= 1;
-          scoreBox.textContent = `점수: ${score}`;
-        }
-      }
-
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.update();
-        p.draw(ctx);
-        if (p.life <= 0) particles.splice(i, 1);
-      }
-
-
-
- animationFrameId = requestAnimationFrame(animate); // ✅ 중복 방지
-
-
-
+  // ▼ 동적(떨어지는 글자) 처리 — 정적 모드에선 안 들어옴
+  letterSpawnTimer++;
+  if (letterSpawnTimer % 180 === 0) {
+    const remaining = activeLetters.filter(a => !fallingLetters.find(l => l.id === a.id));
+    if (remaining.length > 0) {
+      spawnLetter(remaining[0]);
     }
+  }
+
+  for (let i = fallingLetters.length - 1; i >= 0; i--) {
+    const l = fallingLetters[i];
+    l.update();
+    l.draw(ctx);
+    if (l.y > canvas.height + 30 && !l.marked) {
+      fallingLetters.splice(i, 1);
+      score -= 1;
+      scoreBox.textContent = `점수: ${score}`;
+    }
+  }
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.update();
+    p.draw(ctx);
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  animationFrameId = requestAnimationFrame(animate);
+}
+
 
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -1168,7 +1242,10 @@ function loadQuestion() {
   updateFailCountUI(); // ✅ 실패 횟수 UI 초기화
   updateProgressUI();  // ✅ 진행률도 업데이트
 
-  if (!quizData || quizData.length === 0) return; // ✅ 이 부분도 안에 있어야 함
+  if (!quizData || quizData.length === 0) return; // ✅ 이 부분도 안에 있어야
+
+  // ▼ 정적 글자 렌더 (중요)
+  renderChars(q.hint);
 }
 
 
@@ -1221,6 +1298,68 @@ if ((isStartScreen || !isStarted) && e.key === 'Enter') {
     // 🔹 이미 시작된 경우: 정답 체크 로직
     const input = textInput.value.trim();
     let matched = false;
+    // ⬇ 정적 모드일 땐 떨어지는 글자 대신, 남은 글자(activeLetters)의 '현재 목표'와 비교
+if (STATIC_MODE) {
+  const next = activeLetters[0]; // 남아있는 첫 글자(현재 목표)
+  if (next && isMatchingAnswer(input, next.answer)) {
+    playSound("sfx-correct");
+    score += 1;
+    scoreBox.textContent = `점수: ${score}`;
+    showFloatingText(canvas.width/2, canvas.height*0.6, "+1점!");
+
+    // 목표 하나 제거
+    activeLetters.shift();
+    updateProgressUI();
+
+    // 문제 완료 시 다음 문제로
+    if (activeLetters.length === 0) {
+      setTimeout(() => {
+        if (current + 1 >= quizData.length) {
+          document.getElementById('congratsScreen').style.display = 'flex';
+          return;
+        }
+        playSound("sfx-next");
+        current++;
+        loadQuestion();
+        updateStatusBox();
+      }, 150);
+    }
+
+    textInput.value = '';
+    return; // ✅ 정적 모드 처리는 여기서 끝
+  } else {
+    // 오답 처리(기존과 동일한 효과)
+    playSound("sfx-wrong");
+    failCount++;
+    updateFailCountUI();
+
+    if (failCount === 5) {
+      document.getElementById("hintText").textContent = quizData[current].explain;
+      explainBox.classList.add('visible');
+      explainBox.style.display = 'block';
+    }
+    if (failCount === 10) {
+      const fullHintBox = document.getElementById('fullHintPopup');
+      const content = document.getElementById('fullHintContent');
+      const currentQuiz = quizData[current];
+      let html = `<strong>문제:</strong> ${currentQuiz.title}<br><br>`;
+      html += `<strong>힌트:</strong> ${currentQuiz.hint}<br><br>`;
+      html += `<strong>정답 목록:</strong><br><ul>`;
+      currentQuiz.answers.forEach(ans => {
+        html += `<li><strong>${ans.letter}</strong>: ${ans.text}</li>`;
+      });
+      html += `</ul><br><em style="color:#ccc;">※ 학습용으로 정답 전체를 보여드립니다.</em>`;
+      content.innerHTML = html;
+      fullHintBox.style.display = 'block';
+    }
+
+    textInput.classList.add('shake');
+    setTimeout(() => textInput.classList.remove('shake'), 300);
+    textInput.value = '';
+    return; // ✅ 정적 모드 분기 종료
+  }
+}
+
     for (let i = 0; i < fallingLetters.length; i++) {
       const l = fallingLetters[i];
       if (!l.marked && isMatchingAnswer(input, l.answer)) {
@@ -1463,9 +1602,10 @@ document.addEventListener("visibilitychange", function () {
     cancelAnimationFrame(animationFrameId); // ✅ 루프 중지
   } else {
     // 수동 일시정지 중이 아니고, 게임이 시작된 상태면 재개
-    if (!wasManuallyPaused && isStarted) {
-      animate(); // ✅ 중복 방지된 안전한 재시작
-    }
+   if (!wasManuallyPaused && isStarted && !STATIC_MODE) {
+  animate();
+}
+
   }
 });
 
@@ -1478,8 +1618,9 @@ function startQuiz() {
   document.getElementById('startScreen').style.display = 'none';
   questionBox.style.display = 'block';
   loadQuestion();
-  updateStatusBox();
-  animate();  // 👉 여기에서 처음으로 실행!
+ updateStatusBox();
+if (!STATIC_MODE) animate();  // 정적 모드면 루프 미호출
+
   setTimeout(() => {
     textInput.focus();
     textInput.select();
@@ -1533,17 +1674,66 @@ background: rgba(255, 255, 255, 0.06);
   cursor: pointer;
 ">
   닫기 ✖
-</button>
+</button></div>
 
 </div>
 
 
 
+<script>
+// 키보드 높이 반영 (추가)
+(function(){
+  const vv = window.visualViewport;
+  if(!vv) return;
+  let raf=null;
+  const update=()=>{
+    raf=null;
+    const kb=Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
+    document.documentElement.style.setProperty('--kb', kb + 'px');
+  };
+  const on=()=>{ if(!raf) raf=requestAnimationFrame(update); };
+  vv.addEventListener('resize', on);
+  vv.addEventListener('scroll', on);
+  window.addEventListener('orientationchange', ()=>setTimeout(update,300));
+  update();
+})();
 
+// HUD/입력창 실제 높이를 CSS 변수로 반영 (추가)
+(function(){
+  const hud=document.getElementById('hudTop');
+  const box=document.getElementById('inputBox');
+  const setVars=()=>{
+    if(hud) document.documentElement.style.setProperty('--hudH', (hud.offsetHeight||48)+'px');
+    if(box) document.documentElement.style.setProperty('--footerH', (box.offsetHeight||56)+'px');
+  };
+  setVars();
+  if(hud) new ResizeObserver(setVars).observe(hud);
+  if(box) new ResizeObserver(setVars).observe(box);
+  window.addEventListener('resize', ()=>setTimeout(setVars,100));
+})();
 
+// 포커스 가림 방지 (추가)
+document.addEventListener('focusin', e=>{
+  if(e.target.matches('input,textarea,[contenteditable="true"]')){
+    setTimeout(()=>e.target.scrollIntoView({block:'center', inline:'nearest', behavior:'smooth'}),120);
+  }
+});
 
-  </div>
-</div>
+// (선택) 문자 정적 렌더 함수 (추가)
+function renderChars(text){
+  const row=document.getElementById('quizRow');
+  if(!row) return;
+  row.innerHTML='';
+  [...text].forEach(c=>{
+    const s=document.createElement('span');
+    s.className='ch';
+    s.textContent=c;
+    row.appendChild(s);
+  });
+}
+// 예시: renderChars('건축전기설비기술사');
+</script>
+
 
 </body>
 </html>
