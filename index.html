@@ -869,9 +869,6 @@ function openFullHintManually() {
   html += `</ul><br><em style="color:#ccc;">※ 학습용으로 정답 전체를 보여드립니다.</em>`;
   content.innerHTML = html;
   fullHintBox.style.display = 'block';
-  fullHintBox.scrollTop = 0;   // 팝업을 항상 맨 위부터
-textInput.blur();            // 키보드 올려놨으면 살짝 내리기(원하면 삭제해도 됨)
-
 }
 
 
@@ -1411,14 +1408,46 @@ function loadQuestion() {
 
 
 
-// ✅ Shift + → 로 문제 스킵 (간단/안전)
-if (e.shiftKey && e.key === 'ArrowRight') {
-  skipQuestion();
+
+
+textInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+
+  const isInputFocused = (document.activeElement.id === 'textInput');
+  const isStartScreen = document.getElementById('startScreen').style.display !== 'none';
+  const isCongratsScreen = document.getElementById('congratsScreen').style.display === 'flex';
+
+
+if ((isStartScreen || !isStarted) && e.key === 'Enter') {
+  startQuiz();
   return;
 }
 
+  if (isCongratsScreen) return;
+
+  if (!isInputFocused) {
+    e.preventDefault();
+    textInput.focus();
+    textInput.select();
+  }
 
 
+
+     if (isStarted && activeLetters.length === 0 && fallingLetters.length === 0) {
+      if (current + 1 >= quizData.length) {
+        document.getElementById('congratsScreen').style.display = 'flex';
+        return;
+      }
+      // 다음 문제로 이동
+      current++;
+      loadQuestion();
+      updateStatusBox();
+      textInput.value = '';
+    }if (document.getElementById('congratsScreen').style.display === 'flex' && e.key === 'Enter') {
+    restartQuiz();
+    document.getElementById('startScreen').style.display = 'none';
+      return;
+    }
 
 
 
