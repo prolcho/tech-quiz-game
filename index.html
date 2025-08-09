@@ -287,6 +287,18 @@ body::before {
 
 
 
+/* ✅ 보라 버튼 둘을 키보드/입력창 위로 띄우고 좌/우로 분리 */
+#manualHintButton,
+#restartCurrentBtn{
+  position: fixed !important;
+  z-index: 1003 !important;
+  bottom: calc(env(safe-area-inset-bottom) + var(--kb) + 88px) !important;
+}
+
+#manualHintButton{ left: 12px !important; right: auto !important; }
+#restartCurrentBtn{ right: 12px !important; left: auto !important; }
+
+
 @media (max-width: 480px) {
   #textInput {
     width: 90vw;
@@ -311,18 +323,7 @@ body::before {
 
 
 
-  #manualHintButton,
-  #restartCurrentBtn {
-    left: 10px;
-    bottom: auto;
-    top: auto;
-    transform: scale(0.9);
-  }
 
-  #restartCurrentBtn {
-    left: auto;
-    right: 10px;
-  }
 
   #startScreen,
   #congratsScreen {
