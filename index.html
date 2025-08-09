@@ -330,17 +330,7 @@ body::before {
     padding: 20px;
   }
 
-  #fullHintPopup > div {
-    padding: 10px;
-  }
 
-  #fullHintPopup h2 {
-    font-size: 1.2rem;
-  }
-
-  #fullHintPopup #fullHintContent {
-    font-size: 0.9rem;
-  }
 }
 
 
@@ -516,6 +506,72 @@ body.lock-scroll { height: 100vh; overflow: hidden; }
 }
 
 
+/* === 힌트 전체보기: 위쪽 고정 시트 === */
+#fullHintPopup{
+  display:none;
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(env(safe-area-inset-top) + var(--hudH) + 8px); /* HUD 바로 아래 */
+  width: min(680px, 96vw);
+  max-height: calc(100dvh - (env(safe-area-inset-top) + var(--hudH) + var(--footerH) + var(--kb) + 24px));
+  overflow: auto;
+  z-index: 1003;
+
+  background: #111;
+  border: 1px solid #00ffe1;
+  border-radius: 12px;
+  padding: 16px;
+  color: #00ffe1;
+  box-sizing: border-box;
+}
+
+#fullHintPopup h2{
+  margin: 0 0 12px;
+  text-align: center;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.2rem;
+}
+
+#fullHintContent{ font-size: 1rem; line-height: 1.6; }
+
+#fullHintPopup .hint-actions{
+  margin-top: 12px;
+  display: flex; justify-content: center;
+}
+
+#fullHintPopup .hint-actions button{
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--main-accent);
+  border-radius: 12px;
+  color: var(--main-accent);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.95rem;
+  padding: 6px 12px;
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+
+
+#skipHint{
+  position: fixed;
+  right: 20px;
+  top: calc(env(safe-area-inset-top) + var(--hudH) + 8px);
+  z-index: 1002;
+}
+
+#skipHint #skipBtn{
+  font-size: 0.9rem;
+  color: #ddd;
+  background: rgba(0,0,0,0.6);
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #00ffe1;
+  font-family: 'Orbitron', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+
 
   </style>
 </head>
@@ -605,20 +661,11 @@ background: rgba(255, 255, 255, 0.06);
 
 
 
-<div id="skipHint" style="
-  position: fixed;
-  top: 60px;
-  right: 20px;
-  font-size: 0.8rem;
-  color: #999;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 4px 10px;
-  border-radius: 8px;
-  z-index: 999;
-  font-family: 'Orbitron', sans-serif;
-">
-  ⏩ Shift + → 키로 문제 스킵
+<!-- 기존 #skipHint 내용 삭제 후 교체 -->
+<div id="skipHint">
+  <button id="skipBtn" type="button">⏩ 다음 문제 (Shift+→)</button>
 </div>
+
 
 
 
@@ -822,10 +869,36 @@ function openFullHintManually() {
   html += `</ul><br><em style="color:#ccc;">※ 학습용으로 정답 전체를 보여드립니다.</em>`;
   content.innerHTML = html;
   fullHintBox.style.display = 'block';
+  fullHintBox.scrollTop = 0;   // 팝업을 항상 맨 위부터
+textInput.blur();            // 키보드 올려놨으면 살짝 내리기(원하면 삭제해도 됨)
+
 }
 
 
+function skipQuestion() {
+  if (!isStarted || isPaused) return;
 
+  if (current + 1 >= quizData.length) {
+    document.getElementById('congratsScreen').style.display = 'flex';
+    return;
+  }
+
+  current++;
+  failCount = 0;
+  updateFailCountUI();
+
+  loadQuestion();
+  updateStatusBox();
+  playSound("sfx-next");
+
+  textInput.value = '';
+  explainBox.style.display = 'none';
+  explainBox.classList.remove('visible');
+}
+
+// ✅ 전역에서 1회만 연결 (skipQuestion 정의 바로 아래 추천)
+const skipBtn = document.getElementById('skipBtn');
+if (skipBtn) skipBtn.addEventListener('click', skipQuestion);
 
 
 function restartQuiz() {
@@ -1338,46 +1411,14 @@ function loadQuestion() {
 
 
 
-
-
-textInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-
-  const isInputFocused = (document.activeElement.id === 'textInput');
-  const isStartScreen = document.getElementById('startScreen').style.display !== 'none';
-  const isCongratsScreen = document.getElementById('congratsScreen').style.display === 'flex';
-
-
-if ((isStartScreen || !isStarted) && e.key === 'Enter') {
-  startQuiz();
+// ✅ Shift + → 로 문제 스킵 (간단/안전)
+if (e.shiftKey && e.key === 'ArrowRight') {
+  skipQuestion();
   return;
 }
 
-  if (isCongratsScreen) return;
-
-  if (!isInputFocused) {
-    e.preventDefault();
-    textInput.focus();
-    textInput.select();
-  }
 
 
-
-     if (isStarted && activeLetters.length === 0 && fallingLetters.length === 0) {
-      if (current + 1 >= quizData.length) {
-        document.getElementById('congratsScreen').style.display = 'flex';
-        return;
-      }
-      // 다음 문제로 이동
-      current++;
-      loadQuestion();
-      updateStatusBox();
-      textInput.value = '';
-    }if (document.getElementById('congratsScreen').style.display === 'flex' && e.key === 'Enter') {
-    restartQuiz();
-    document.getElementById('startScreen').style.display = 'none';
-      return;
-    }
 
 
 
@@ -1729,42 +1770,12 @@ const startScreen = document.getElementById('startScreen');
 
 
 
-<div id="fullHintPopup" style="
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.95);
-  color: #00ffe1;
-  font-family: 'Pretendard', sans-serif;
-  z-index: 9999;
-  padding: 40px 20px;
-  overflow-y: auto;
-  box-sizing: border-box;
-">
-
-  <div style="max-width: 600px; margin: 0 auto; background: #111; border: 1px solid #00ffe1; padding: 20px; border-radius: 12px;">
-    <h2 style="text-align: center; margin-top: 0; font-family: 'Orbitron'; font-size: 1.5rem;">💡 힌트 전체 보기</h2>
-    <div id="fullHintContent" style="font-size: 1rem; line-height: 1.6;"></div>
-
-
-<button onclick="closeFullHintPopup()" style="
-background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--main-accent);
-  border-radius: 12px;
-  color: var(--main-accent);
-  font-family: 'Orbitron', sans-serif;
-  font-size: 0.95rem;
-  padding: 6px 12px;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(4px);
-  cursor: pointer;
-">
-  닫기 ✖
-</button></div>
-
+<div id="fullHintPopup">
+  <h2>💡 힌트 전체 보기</h2>
+  <div id="fullHintContent"></div>
+  <div class="hint-actions">
+    <button id="fullHintCloseBtn" onclick="closeFullHintPopup()">닫기 ✖</button>
+  </div>
 </div>
 
 
