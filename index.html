@@ -1902,5 +1902,51 @@ function popAndRemoveFirstTile(){
   })();
 </script>
 
+<script>
+/**
+ * 빈 화면(비인터랙티브 영역) 탭 시 키보드 닫기
+ * - 입력창(#inputBox), 전체힌트팝업(#fullHintPopup), HUD(.hud-top), 보조 버튼(#manualHintButton, #restartCurrentBtn)은 제외
+ * - pointerdown으로 터치/마우스 모두 대응
+ */
+(function(){
+  const EXCLUDE_SELECTORS = [
+    '#inputBox',            // 입력창 영역
+    '#fullHintPopup',       // 전체 힌트 팝업
+    '.hud-top',             // 상단 HUD
+    '#manualHintButton',    // 힌트 전체 열기 버튼 래퍼
+    '#restartCurrentBtn',   // 현재 문제 다시 버튼 래퍼
+    '#modeSelector',        // 모드 라디오
+    '#skipHint',            // 다음 문제 버튼
+    '#startScreen',         // 시작 화면
+    '#congratsScreen'       // 완료 화면
+  ];
+
+  function isInsideExcluded(elem){
+    return EXCLUDE_SELECTORS.some(sel => elem.closest(sel));
+  }
+
+  function dismissKeyboard(){
+    const ae = document.activeElement;
+    if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) {
+      ae.blur();
+    }
+  }
+
+  // 스테이지/캔버스/바디 어디를 탭해도 동작하도록 바디에 설치
+  document.body.addEventListener('pointerdown', function(e){
+    // 인터랙티브 영역이면 무시
+    if (isInsideExcluded(e.target)) return;
+    // 링크/버튼 등 기본 인터랙션 방해하지 않음
+    dismissKeyboard();
+  }, { passive: true });
+
+  // iOS에서 종종 blur가 늦게 먹을 때를 대비한 보조 처리(선택)
+  document.body.addEventListener('focusin', function(e){
+    // 포커스가 다시 입력으로 옮겨졌다면 그대로 두기
+  });
+})();
+</script>
+
+
 </body>
 </html>
